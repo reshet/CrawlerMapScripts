@@ -19,7 +19,7 @@ class GoogleGeocoderCached {
         if(!(result instanceof net.sf.json.JSONNull))return result
         else return null
     }
-    public static String geocode(String address,boolean local){
+    public static String geocode(String address,boolean local,boolean strict = false){
         String ans_cache = ""
         String url = local?cache_url_local:cache_url_remote
         url+="?action=gt&address="+URLEncoder.encode(address);
@@ -29,8 +29,8 @@ class GoogleGeocoderCached {
         else
         {
             //println "geocoding..."
-            //sleep(2000);
-            String google_ans = ("http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&sensor=false").toURL().getText()
+            sleep(300);
+            String google_ans = ("http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false").toURL().getText()
             def slurper = new JsonSlurper()
             def result = slurper.parseText(google_ans)
             //println result
@@ -39,10 +39,18 @@ class GoogleGeocoderCached {
 
                 def lat = result.results[0].geometry.location.lat
                 def lng = result.results[0].geometry.location.lng
+                def loc_type = result.results[0].geometry.location_type
+                if(strict && loc_type=="APPROXIMATE"){
+                    //println loc_type;
+                    //return "no definite geocode";
+                    //throw new Exception("no definite geocode");
+                }
                 if(lat != null && lng != null){
                     String url2 = local?cache_url_local:cache_url_remote
-                    url2+="?action=pt&address="+URLEncoder.encode(address)+"&long="+lng+"&lat="+lat;
-                    //println url2
+                    def formatted = result.results[0].formatted_address
+                    //println formatted
+                    url2+="?action=pt&address="+URLEncoder.encode(address)+"&long="+lng+"&lat="+lat+"&g_address="+URLEncoder.encode(formatted)+"&type="+loc_type;
+
                     return url2.toURL().getText()
                 }
 
