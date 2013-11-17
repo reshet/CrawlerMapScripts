@@ -34,7 +34,7 @@ class GoogleGeocoderCached {
             def slurper = new JsonSlurper()
             def result = slurper.parseText(google_ans)
             //println result
-            println result.status+":"
+            //println result.status+":"
             if(result.status == "OK"){
 
                 def lat = result.results[0].geometry.location.lat
