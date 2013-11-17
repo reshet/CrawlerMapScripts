@@ -371,6 +371,8 @@ def writeTramsToDoc2(def trams){
 
     table.getContent().add(tableRow);
     int i = 1;
+
+
     trams.each{  tram->
         Tr tableRow1 = factory.createTr();
         addTableCell(tableRow1, tram.number,factory,wordMLPackage);
