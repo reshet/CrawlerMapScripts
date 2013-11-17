@@ -363,6 +363,7 @@ def writeTramsToDoc2(def trams){
     Tbl table = factory.createTbl();
     Tr tableRow = factory.createTr();
 
+
     addTableCell(tableRow, "Номер маршруту",factory,wordMLPackage);
     addTableCell(tableRow, "Напрямок",factory,wordMLPackage);
     addTableCell(tableRow, "Довжина маршруту",factory,wordMLPackage);
