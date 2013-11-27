@@ -400,14 +400,14 @@ def readStopsInfo(def folder,def route_number){
 }
 
 
-def readAllRoutesInfo(def folder){
+def readAllRoutesInfo(def folder,def type){
     Workbook w;
     def transp_measures = [:]
 
     try {
         File fold = new File(folder);
         File [] files = fold.listFiles();
-        //println files;
+        println files;
         files.each{
             fl->
                 //println fl.path
@@ -424,7 +424,7 @@ def readAllRoutesInfo(def folder){
                 XSSFWorkbook workbook = new XSSFWorkbook(filestr);
 
                 //byte [] img = readRouteMap(workbook);
-                byte [] img = getFreshRouteImage("/home/reshet/transport/trams/fresh_maps/",route_number3);
+                byte [] img = getFreshRouteImage("/home/reshet/transport/fresh_maps_all/",route_number3,type);
 
                 XSSFSheet sheet_pik = workbook.getSheetAt(0);
                 //XSSFSheet sheet_mez = workbook.getSheetAt(1);
@@ -464,8 +464,8 @@ def readTramsInfo(Sheet sheet){
     int name_col = 2;
     int L_col = 17;
     int T_col = 18;
-    int start_time_col = 33;
-    int end_time_col = 34;
+    int start_time_col = 32;
+    int end_time_col = 33;
 
     String curr_depo = ""
     for (int i = 24; i < 83; i++) {
@@ -475,100 +475,60 @@ def readTramsInfo(Sheet sheet){
         if(depo!="" && depo != curr_depo)curr_depo = depo;
         def number =  sheet.getCell(number_col, i).getContents();
         if(test !="" && !test.contains("Всього")){
-            //print curr_depo+ " "
-            //print sheet.getCell(agency_col, i).getContents()+" "
-            /*print sheet.getCell(number_col, i).getContents()+" "
-            print sheet.getCell(name_col, i).getContents()+" "
-            print sheet.getCell(L_col, i).getContents()+" "
-            print sheet.getCell(T_col, i).getContents()+" "
-            */
-            //print sheet.getCell(start_time_col, i).getContents()+" "
-            //print sheet.getCell(end_time_col, i).getContents()+" "
-            //println "";        '
             for(int j = 0;j< 20;j++){
                 print sheet.getCell(T_col+j, i).getContents()+"  "
             }
             println "";
             def tram = [agency:"КП «КИЇВПАСТРАНС», "+curr_depo+" ТРЕД",
-                        number:number,
-                        name:sheet.getCell(name_col, i).getContents(),
-                        L:sheet.getCell(L_col, i).getContents(),
-                        T:sheet.getCell(T_col, i).getContents(),
-                        start:sheet.getCell(start_time_col, i).getContents(),
-                        end:sheet.getCell(end_time_col, i).getContents()
-
+                    number:number,
+                    name:sheet.getCell(name_col, i).getContents(),
+                    L:sheet.getCell(L_col, i).getContents(),
+                    T:sheet.getCell(T_col, i).getContents(),
+                    start:sheet.getCell(start_time_col, i).getContents(),
+                    end:sheet.getCell(end_time_col, i).getContents()
             ]
             println tram
             trams.add(tram)
         }
-        //println "";
-
-
-        //CellType type = cell.getType();
-        /*if (type == CellType.LABEL) {
-            System.out.println("I got a label "
-                    + cell.getContents());
-        }
-
-        if (type == CellType.NUMBER) {
-            System.out.println("I got a number "
-                    + cell.getContents());
-        }*/
-
     }
     return trams;
 }
-/*
-def writeTramsToDoc(def trams){
-    XWPFDocument document = new XWPFDocument();
-    XWPFParagraph tmpParagraph = document.createParagraph();
-    XWPFRun tmpRun = tmpParagraph.createRun();
-    tmpRun.setText("Загальна інформація про трамвайні маршрути");
-    tmpRun.setFontSize(18);
-    XWPFTable table = document.createTable(trams.size()+1, 6);
-    //table.setRowBandSize(1);
-    //table.setWidth(1);
-    //table.setColBandSize(1);
-    //table.setCellMargins(1, 1, 100, 30);
+def readTrolsInfo(Sheet sheet){
+    def transps = []
+    int agency_col = 0;
+    int number_col = 1;
+    int name_col = 2;
+    int L_col = 14;
+    int T_col = 15;
+    int start_time_col = 22;
+    int end_time_col = 23;
 
-    //table.setStyleID("finest");
-    XWPFTableRow firstrow = table.getRow(0);
-
-
-    firstrow.getCell(0).setText("Номер маршруту");
-
-    //firstrow.getCell(0).getCTTc().addNewTcPr().addNewTcW().setW(BigInteger.valueOf(100));
-    firstrow.getCell(1).setText("Напрямок");
-    //firstrow.getCell(1).getCTTc().addNewTcPr().addNewTcW().setW(BigInteger.valueOf(200));
-    firstrow.getCell(2).setText("Довжина маршруту");
-    //firstrow.getCell(2).getCTTc().addNewTcPr().addNewTcW().setW(BigInteger.valueOf(100));
-    firstrow.getCell(3).setText("Тривалість оборотного");
-   // firstrow.getCell(3).getCTTc().addNewTcPr().addNewTcW().setW(BigInteger.valueOf(100));
-    //firstrow.getCell(4).setText("Початок роботи");
-    //firstrow.getCell(5).setText("Останнє відправлення");
-
-    int i = 1;
-    trams.each{  tram->
-        XWPFTableRow row = table.getRow(i);
-        row.getCell(0).setText(tram.number);
-        row.getCell(1).setText(tram.name);
-        row.getCell(2).setText(tram.L);
-        row.getCell(3).setText(tram.T);
-        //row.getCell(5).setText("Початок роботи");
-        //row.getCell(6).setText("Останнє відправлення");
-        i++;
-   }
-    table.setWidth(650);
-    File f = new File("/home/reshet/transport/trams/temp.docx");
-    f.createNewFile();
-    FileOutputStream fos = new FileOutputStream(f);
-    document.write(fos);
-    fos.close();
-    *//*f.withWriter{
-        document.write(it);
-    }*//*
-
-}*/
+    String curr_depo = ""
+    for (int i = 12; i < 96; i++) {
+        String test =  sheet.getCell(name_col, i).getContents();
+        String depo =  sheet.getCell(agency_col, i).getContents();
+        if(depo!="" && curr_depo == "")curr_depo = depo;
+        if(depo!="" && depo != curr_depo)curr_depo = depo;
+        def number =  sheet.getCell(number_col, i).getContents();
+        if(test !="" && !test.contains("Всього")){
+            /*for(int j = 0;j< 20;j++){
+                print sheet.getCell(T_col+j, i).getContents()+"  "
+            }
+            println "";*/
+            def transp = [agency:"КП «КИЇВПАСТРАНС», "+curr_depo+" депо",
+                    number:number,
+                    name:sheet.getCell(name_col, i).getContents(),
+                    L:sheet.getCell(L_col, i).getContents(),
+                    T:sheet.getCell(T_col, i).getContents(),
+                    start:sheet.getCell(start_time_col, i).getContents(),
+                    end:sheet.getCell(end_time_col, i).getContents()
+            ]
+            println transp
+            transps.add(transp)
+        }
+    }
+    return transps;
+}
 
 
 private static void changeFontToTimesNewR(RPr runProperties) {
@@ -789,13 +749,22 @@ def createTableOfStops(def stops){
     return table;
 
 }
-byte [] getFreshRouteImage(def folder,def route_number){
+byte [] getFreshRouteImage(def folder,def route_number,def type){
     File fold = new File(folder);
     byte [] ans = null;
     fold.listFiles().each{
       fl->
         def rname = fl.name.split("_")[0];
-          if(rname == route_number){
+        def r_index = Integer.parseInt(fl.name.split("_")[1]);
+          if(rname == route_number
+            && (
+                (type == 1 && r_index>= 262 && r_index <283)
+                ||
+                (type == 2 && r_index>= 283 && r_index <320)
+                ||
+                ((type == 3 || type == 4) && ((r_index>= 0 && r_index <262) || r_index>= 325))
+          )
+          ){
               //File imageFile = fl;
               if(fl.exists()){
                   BufferedImage input = ImageIO.read(fl);
@@ -917,6 +886,7 @@ private Tbl getTemplateTable(List<Object> tables, String templateKey) throws Doc
     for (Iterator<Object> iterator = tables.iterator(); iterator.hasNext();) {
         Object tbl = iterator.next();
         List<?> textElements = getAllElementFromObject(tbl, Text.class);
+        //println textElements;
         for (Object text : textElements) {
             Text textElement = (Text) text;
             if (textElement.getValue() != null && textElement.getValue().equals(templateKey))
@@ -1038,6 +1008,7 @@ private void replaceTable3Row(String[] placeholders, Map<String, String> textToA
 private void copyTablesFromTmpl(String placeholder,String replacement,WordprocessingMLPackage template, int times,int tmpl_row_number) throws Docx4JException, JAXBException {
     List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
    // 1. find the table
+    println placeholder
     Tbl tempTable = getTemplateTable(tables, placeholder);
     Body b = template.getMainDocumentPart().getJaxbElement().getBody();
     int afterPos = getInsetPositionAfter(placeholder,template);
@@ -1065,101 +1036,39 @@ private void copyTablesFromTmpl(String placeholder,String replacement,Wordproces
     b.getEGBlockLevelElts().remove(templatePos);
 
 }
-def writeTramsToDoc2(def trams){
-    WordprocessingMLPackage template = getTemplate("/home/reshet/transport/trams/report_example_true5.docx");
 
-    ObjectFactory factory = Context.getWmlObjectFactory();
-
-    //Tbl table = factory.createTbl();
-    //addBorders(table);
-    //Tr tableRow = factory.createTr();
-
-
-   /* addTableCell(tableRow, "Номер маршруту",factory,wordMLPackage,true,false,20);
-    addTableCell(tableRow, "Напрямок",factory,wordMLPackage,true,false,20);
-    addTableCell(tableRow, "Довжина маршруту",factory,wordMLPackage,true,false,20);
-    addTableCell(tableRow, "Тривалість оборотного",factory,wordMLPackage,true,false,20);*/
-    //addTableCell(tableRow, "Початок роботи",factory,wordMLPackage,true,false,20);
-    //addTableCell(tableRow, "Останнє відправлення",factory,wordMLPackage,true,false,20);
-
-    //String placeholder = "SJ_EX1";
-    //String toAdd = "jos\ndirksen";
-
-    //replaceParagraph(placeholder, toAdd, template, template.getMainDocumentPart());
-    //replacePlaceholder(template,"ssssss",placeholder);
-    //table.getContent().add(tableRow);
+def writeSch(def transps,def template,def ident){
     int i = 1;
-
-   /* Map<String,String> repl1 = new HashMap<String, String>();
-    repl1.put("MY_N", "function1");*/
-    //repl1.put("SJ_DESC", "desc1");
-    //repl1.put("SJ_PERIOD", "period1");
-
-   /* Map<String,String> repl2 = new HashMap<String, String>();
-    repl2.put("SJ_FUNCTION", "function2");
-    repl2.put("SJ_DESC", "desc2");
-    repl2.put("SJ_PERIOD", "period2");
-
-    Map<String,String> repl3 = new HashMap<String, String>();
-    repl3.put("SJ_FUNCTION", "function3");
-    repl3.put("SJ_DESC", "desc3");
-    repl3.put("SJ_PERIOD", "period3");*/
-
-
-    String [] repl = ["MYNTRAM","name_route","len_r","try_r","t_start1","t_start2","t_end1","t_end2"];
+    String [] repl = [ident];
 
     def replaces = [];
-    trams.each{  tram->
-       /* Tr tableRow1 = factory.createTr();
-        addTableCell(tableRow1, tram.number,factory,wordMLPackage,false,false,16);
-        addTableCell(tableRow1, tram.name,factory,wordMLPackage,false,false,16);
-        addTableCell(tableRow1, tram.L,factory,wordMLPackage,false,false,16);
-        addTableCell(tableRow1, tram.T,factory,wordMLPackage,false,false,16);
-        //addTableCell(tableRow1, tram.start,factory,wordMLPackage,false,false,16);
-        //addTableCell(tableRow1, tram.end,factory,wordMLPackage,false,false,16);
-
-        table.getContent().add(tableRow1);*/
-        def replace_row = [MYNTRAM: tram.number,name_route:tram.name,len_r: tram.L,
-                           try_r:tram.T,
-                           T_start1:tram.start,T_start2:tram.start,
-                           T_end1: tram.end,T_end2: tram.end]
+    transps.each{  transp->
+        def replace_row = [name_route:transp.name,len_r: transp.L,
+                try_r:transp.T,
+                T_start1:transp.start,T_start2:transp.start,
+                T_end1: transp.end,T_end2: transp.end]
+        replace_row.put(ident, transp.number)
         replaces.add(replace_row);
         i++;
     }
     replaceTable1(repl, replaces, template);
 
-    //copyTablesFromTmpl(repl[0],"MY_N_TRAM",template,3);
-
+}
+def writeRoutes(def template,def transps,def input_path,def base_placeholder,def type){
     String filenameHint = null;
     String altText = null;
     int id1 = 0;
     int id2 = 1;
 
-    //def route8 = readStopsInfo("/home/reshet/transport/trams/input/",12);
-    //println route8["pik"];
-    //byte [] img = route8["img"];
-    /*org.docx4j.wml.P p = newImage( wordMLPackage, img,filenameHint, altText,id1, id2,6000);
-    Tr tableRowImg = factory.createTr();
-    Tc tableCell = factory.createTc();
-    tableCell.getContent().add(p);
-    tableRowImg.getContent().add(tableCell);
-*/
-    //table.getContent().add(tableRowImg);
-
-    /*wordMLPackage.getMainDocumentPart().addParagraphOfText("");
-    wordMLPackage.getMainDocumentPart().addObject(table);
-
-    wordMLPackage.getMainDocumentPart().addStyledParagraphOfText("Subtitle","Додаток 5");
-    wordMLPackage.getMainDocumentPart().addStyledParagraphOfText("Subtitle","Схеми та характеристики трамвайних маршрутів");
-*/
-
-    def transp_measures = readAllRoutesInfo("/home/reshet/transport/trams/input/");
+    org.docx4j.wml.ObjectFactory factory = new org.docx4j.wml.ObjectFactory();
+    def transp_measures = readAllRoutesInfo(input_path,type);
     def transp_set = transp_measures.keySet();
-    copyTablesFromTmpl("MY_NUMB_TRAM_TMPL","MY_NUMB_TRAM",template,transp_set.size(),1);
+    //copyTablesFromTmpl(base_placeholder+"_TMPL",base_placeholder,template,transp_set.size(),1);
+    copyTablesFromTmpl(base_placeholder+"TMPL",base_placeholder,template,transp_set.size(),1);
     i = 0;
     transp_set.each{  tram_n->
 
-        def tram_info = findTramInfo(tram_n,trams)
+        def tram_info = findTramInfo(tram_n,transps)
         def replaces2 = [];
         def name = "";
         def agency = "";
@@ -1167,7 +1076,7 @@ def writeTramsToDoc2(def trams){
             name = tram_info.name;
             agency = tram_info.agency;
         }
-        def tram_n_holder = "MY_NUMB_TRAM_"+i;
+        def tram_n_holder = base_placeholder+"_"+i;
         String [] repl2 = [tram_n_holder];
         def replace_row = [name_route:name,Name_agency:agency];
         replace_row.put(tram_n_holder,tram_n);
@@ -1185,168 +1094,71 @@ def writeTramsToDoc2(def trams){
 
         }
 
-        //replaceTable1(repl2, replaces2, template);
-
-
-
         def reps = []
         String [] repl3 = [tram_n_holder];
-
 
         def first = transp_measures[tram_n]["pik"]["first"];
         def reverse = transp_measures[tram_n]["pik"]["reverse"];
         int k_rows = Math.max(first.size(),reverse.size());
         for(int j = 0; j < k_rows;j++){
             def replrow = [:];
-            //Tr tableR = factory.createTr();
             if(j<first.size()){
                 replrow.put("stop_n_start",(j+1)+"");
                 replrow.put("stop_name_start", first[j].name);
-                //addTableCell(tableR, (j+1)+"",factory,wordMLPackage,false,false,16)
-                //addTableCell(tableR, first[j].name,factory,wordMLPackage,false,false,16)
             }else{
                 replrow.put("stop_n_start","");
                 replrow.put("stop_name_start","");
-
-                //addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-                //addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
             }
             if(j<reverse.size()){
                 replrow.put("Stop_n_end",(j+1)+"");
                 replrow.put("stop_name_end", reverse[j].name);
-                /*addTableCell(tableR, ""+(j+1),factory,wordMLPackage,false,false,16)
-                addTableCell(tableR, reverse[j].name,factory,wordMLPackage,false,false,16)*/
             }else{
                 replrow.put("Stop_n_end","");
                 replrow.put("stop_name_end","");
-           /*     addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-                addTableCell(tableR, "",factory,wordMLPackage,false,false,16);*/
             };
             reps.add(replrow);
-            //tbl.getContent().add(tableR);
         }
         replaceTable2(repl3, reps, template,6);
-
         replaceTable3Row(repl2, replace_row, template,1);
-
-
-        /*
-        Tr tableRow4 = factory.createTr();
-        addTableCell(tableRow4, "Перелік зупинок на маршруті",factory,wordMLPackage,true,true,24,4);
-        tbl.getContent().add(tableRow4);
-
-        Tr tableRow5 = factory.createTr();
-        addTableCell(tableRow5, "Прямий напрямок",factory,wordMLPackage,true,true,24,2);
-        addTableCell(tableRow5, "",factory,wordMLPackage);
-        addTableCell(tableRow5, "",factory,wordMLPackage);
-        addTableCell(tableRow5, "Зворотній напрямок",factory,wordMLPackage,true,true,24,2);
-
-        tbl.getContent().add(tableRow5);
-
-        *//*Tr tableRow6 = factory.createTr();
-        Tc tableCell = factory.createTc();
-        tableCell.getContent().add(createTableOfStops(transp_measures[tram_n]["pik"]["first"]));
-        tableRow6.getContent().add(tableCell);
-        tableCell = factory.createTc();
-        tableCell.getContent().add(createTableOfStops(transp_measures[tram_n]["pik"]["reverse"]));
-        tableRow6.getContent().add(tableCell);
-        tbl.getContent().add(tableRow6);
-*//*
-
-        Tr tableRow6 = factory.createTr();
-        addTableCell(tableRow6, "№",factory,wordMLPackage,true,false,20);
-        addTableCell(tableRow6, "Назва зупинки",factory,wordMLPackage,true,false,20);
-        addTableCell(tableRow6, "",factory,wordMLPackage);
-        addTableCell(tableRow6, "№",factory,wordMLPackage,true,false,20);
-        addTableCell(tableRow6, "Назва зупинки",factory,wordMLPackage,true,false,20);
-        tbl.getContent().add(tableRow6);
-
-        def first = transp_measures[tram_n]["pik"]["first"];
-        def reverse = transp_measures[tram_n]["pik"]["reverse"];
-        int k_rows = Math.max(first.size(),reverse.size());
-        for(int j = 0; j < k_rows;j++){
-            Tr tableR = factory.createTr();
-            if(j<first.size()){
-                addTableCell(tableR, (j+1)+"",factory,wordMLPackage,false,false,16)
-                addTableCell(tableR, first[j].name,factory,wordMLPackage,false,false,16)
-            }else{
-                addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-                addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-            };
-            addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-            if(j<reverse.size()){
-                addTableCell(tableR, ""+(j+1),factory,wordMLPackage,false,false,16)
-                addTableCell(tableR, reverse[j].name,factory,wordMLPackage,false,false,16)
-            }else{
-                addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-                addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
-            };
-            tbl.getContent().add(tableR);
-        }
-
-
-        wordMLPackage.getMainDocumentPart().addParagraphOfText("");
-        //addBorders(tbl);
-        wordMLPackage.getMainDocumentPart().addObject(tbl);
-        i++;
-    }*/
         i++;
     }
-
-
-    template.save(new File("/home/reshet/transport/trams/tmpl20.docx"));
-
-
-  /*  tmpRun.setText("Загальна інформація про трамвайні маршрути");
-    XWPFTable table = document.createTable(trams.size()+1, 6);
-    XWPFTableRow firstrow = table.getRow(0);
-    firstrow.getCell(0).setText("Номер маршруту");
-    firstrow.getCell(1).setText("Напрямок");
-    firstrow.getCell(2).setText("Довжина маршруту");
-    firstrow.getCell(3).setText("Тривалість оборотного");
-    int i = 1;
-    trams.each{  tram->
-        XWPFTableRow row = table.getRow(i);
-        row.getCell(0).setText(tram.number);
-        row.getCell(1).setText(tram.name);
-        row.getCell(2).setText(tram.L);
-        row.getCell(3).setText(tram.T);
-        //row.getCell(5).setText("Початок роботи");
-        //row.getCell(6).setText("Останнє відправлення");
-        i++;
-    }
-    File f = new File("/home/reshet/transport/trams/temp.docx");
-    f.createNewFile();
-  */
 
 }
-def timetableReader(File inputWorkbook){
+def writeReport(){
+    WordprocessingMLPackage template = getTemplate("/home/reshet/transport/trams/report_example_true8.docx");
+    File trams_timetable = new File("/home/reshet/transport/trams/trams_timetable1.xls");
+
     Workbook w;
     try {
-        w = Workbook.getWorkbook(inputWorkbook);
+        w = Workbook.getWorkbook(trams_timetable);
         // Get the first sheet
         Sheet sheet = w.getSheet(0);
         def trams = readTramsInfo(sheet);
-        writeTramsToDoc2(trams);
+        def trols = readTrolsInfo(w.getSheet(1));
+
+        //def buss = readTramsInfo(sheet);
+        //def marshs = readTramsInfo(sheet);
+
+        writeSch(trams,template,"MYNTRAM")
+        writeSch(trols,template,"MYNTROL")
+        //writeSch(buss,template,"MYNBUS")
+        //writeSch(marshs,template,"MYNMARSH")
+
+        writeRoutes(template,trams,"/home/reshet/transport/trams/input/","MY_NUMB_TRAM_",1)
+        writeRoutes(template,trols,"/home/reshet/transport/trams/троллейбус/","MYNUMBTROL",2)
+        //writeRoutes(template,"/home/reshet/transport/trams/автобус/","MY_NUMB_BUS",3)
+        //writeRoutes(template,"/home/reshet/transport/trams/маршрутка/","MY_NUMB_MARSH",4)
+
+        template.save(new File("/home/reshet/transport/trams/tmpl23.docx"));
 
     } catch (BiffException e) {
         e.printStackTrace();
     }
-
 }
 
-File trams_timetable = new File("/home/reshet/transport/trams/trams_timetable1.xls");
-timetableReader(trams_timetable);
-//readStopsInfo("/home/reshet/transport/trams/input/",2);
-//readStopsInfo("/home/reshet/transport/trams/input/",4);
-//readStopsInfo("/home/reshet/transport/trams/input/",5);
-//def res = readStopsInfo("/home/reshet/transport/trams/input/",8);
-//println res;
-//println readStopsInfo("/home/reshet/transport/trams/input/",11);
+writeReport()
 
-//println readStopsInfo("/home/reshet/transport/trams/input/",12);
-//println readStopsInfo("/home/reshet/transport/trams/input/",14);
-//println readStopsInfo("/home/reshet/transport/trams/input/",16);
-//println readStopsInfo("/home/reshet/transport/trams/input/",18);
+
+
 
 
