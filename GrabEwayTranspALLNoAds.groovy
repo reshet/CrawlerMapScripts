@@ -27,6 +27,8 @@ public static void screenGrab(def route_link,String route_name){
             "http://www.eway.in.ua/ua/cities/kyiv/routes/"+route_link+
             " "+screen_name
     if(!new File(screen_name).exists()){
+        println new Date().getDateTimeString() +" __ making screen " + screen_name;
+
         def proc = command.execute()
         proc.waitFor()
     }
@@ -41,7 +43,6 @@ GParsPool.withPool{
 
                 def str = index+ " "+elem+" "+elem.@id.toString();
                 //logfile.withWriterAppend {f -> f << new Date().getDateTimeString() +" __ making screen " + str+"\n"}
-                println new Date().getDateTimeString() +" __ making screen " + str;
                 String route_name = elem.text().toString()
                 String route_link = elem.@id.toString()
                 route_link = route_link.substring(9,route_link.length())

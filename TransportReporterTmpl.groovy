@@ -489,7 +489,7 @@ def readTramsInfo(Sheet sheet){
                 print sheet.getCell(T_col+j, i).getContents()+"  "
             }
             println "";
-            def tram = [agency:curr_depo,
+            def tram = [agency:"КП «КИЇВПАСТРАНС», "+curr_depo+" ТРЕД",
                         number:number,
                         name:sheet.getCell(name_col, i).getContents(),
                         L:sheet.getCell(L_col, i).getContents(),
@@ -746,6 +746,27 @@ public org.docx4j.wml.P newImage( WordprocessingMLPackage wordMLPackage,
     return p;
 
 }
+public org.docx4j.wml.R newImageRun( WordprocessingMLPackage wordMLPackage,
+                                  byte[] bytes,
+                                  String filenameHint, String altText,
+                                  int id1, int id2, long cx) throws Exception {
+
+    BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, bytes);
+
+    Inline inline = imagePart.createImageInline( filenameHint, altText,
+            id1, id2, cx);
+
+    // Now add the inline in w:p/w:r/w:drawing
+    org.docx4j.wml.ObjectFactory factory = new org.docx4j.wml.ObjectFactory();
+    org.docx4j.wml.R  run = factory.createR();
+    //p.getParagraphContent().add(run);
+    org.docx4j.wml.Drawing drawing = factory.createDrawing();
+    run.getRunContent().add(drawing);
+    drawing.getAnchorOrInline().add(inline);
+
+    return run;
+
+}
 def createTableOfStops(def stops){
     WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
     ObjectFactory factory = Context.getWmlObjectFactory();
@@ -809,6 +830,37 @@ private static List<Object> getAllElementFromObject(Object obj, Class<?> toSearc
 
     }
     return result;
+}
+
+
+/*private static void replaceMapImage(def newimgp, Tr workingRow) {
+    List<Object> paragraphs = getAllElementFromObject(workingRow, P.class);
+
+    for (Object p : paragraphs) {
+        List<Object> draws = getAllElementFromObject(p, Drawing.class);
+        if(draws.size()>0){
+            p = newimgp;
+            break;
+            //toReplace = (P) p;
+        }
+    }
+}*/
+private static void replaceMapImage(ObjectFactory factory,def newimgr, Tr workingRow) {
+    //Tc tblCell = factory.createTc();
+    //tblCell.getContent().add(newimgp);
+    //workingRow.getContent().remove(0);
+    //workingRow.getContent().get(0).s;
+    List<Object> paragraphs = getAllElementFromObject(workingRow, P.class);
+
+    for (Object p : paragraphs) {
+        List<Object> draws = getAllElementFromObject(p, Drawing.class);
+        if(draws.size()>0){
+            ((P)p).getParagraphContent().remove(0);
+            ((P)p).getParagraphContent().add(newimgr);
+            break;
+            //toReplace = (P) p;
+        }
+    }
 }
 private void replacePlaceholder(WordprocessingMLPackage template, String name, String placeholder ) {
     List<Object> texts = getAllElementFromObject(template.getMainDocumentPart(), Text.class);
@@ -911,6 +963,18 @@ private static void addRowToTable(Tbl reviewtable, Tr templateRow, Map<String, S
 
     reviewtable.getContent().add(workingRow);
 }
+private static void editRowInTable(Tbl reviewtable, Tr templateRow, Map<String, String> replacements) {
+    Tr workingRow = templateRow;
+    List<?> textElements = getAllElementFromObject(workingRow, Text.class);
+    for (Object object : textElements) {
+        Text text = (Text) object;
+        String replacementValue = (String) replacements.get(text.getValue());
+        if (replacementValue != null)
+            text.setValue(replacementValue);
+    }
+
+    //reviewtable.getContent().add(workingRow);
+}
 private void replaceTable1(String[] placeholders, List<Map<String, String>> textToAdd,
                           WordprocessingMLPackage template) throws Docx4JException, JAXBException {
     List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
@@ -933,22 +997,62 @@ private void replaceTable1(String[] placeholders, List<Map<String, String>> text
         tempTable.getContent().remove(templateRow);
     }
 }
+private void replaceTable2(String[] placeholders, List<Map<String, String>> textToAdd,
+                           WordprocessingMLPackage template,int base_row) throws Docx4JException, JAXBException {
+    List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
 
-private void copyTablesFromTmpl(String[] placeholders, List<Map<String, String>> textToAdd,
-                           WordprocessingMLPackage template, int times) throws Docx4JException, JAXBException {
+    // 1. find the table
+    Tbl tempTable = getTemplateTable(tables, placeholders[0]);
+    List<Object> rows = getAllElementFromObject(tempTable, Tr.class);
+
+    // first row is header, second row is content
+    if (rows.size() > base_row) {
+        // this is our template row
+        Tr templateRow = (Tr) rows.get(base_row);
+
+        for (Map<String, String> replacements : textToAdd) {
+            // 2 and 3 are done in this method
+            addRowToTable(tempTable, templateRow, replacements);
+        }
+
+        // 4. remove the template row
+        tempTable.getContent().remove(templateRow);
+    }
+}
+private void replaceTable3Row(String[] placeholders, Map<String, String> textToAdd,
+                           WordprocessingMLPackage template,int base_row) throws Docx4JException, JAXBException {
+    List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
+
+    // 1. find the table
+    Tbl tempTable = getTemplateTable(tables, placeholders[0]);
+    List<Object> rows = getAllElementFromObject(tempTable, Tr.class);
+
+    // first row is header, second row is content
+    if (rows.size() > base_row) {
+        // this is our template row
+        Tr templateRow = (Tr) rows.get(base_row);
+        editRowInTable(tempTable, templateRow, textToAdd)
+    }
+}
+
+private void copyTablesFromTmpl(String placeholder,String replacement,WordprocessingMLPackage template, int times,int tmpl_row_number) throws Docx4JException, JAXBException {
     List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
    // 1. find the table
-    Tbl tempTable = getTemplateTable(tables, placeholders[0]);
+    Tbl tempTable = getTemplateTable(tables, placeholder);
     Body b = template.getMainDocumentPart().getJaxbElement().getBody();
-    int afterPos = getInsetPositionAfter(placeholders[0],template);
+    int afterPos = getInsetPositionAfter(placeholder,template);
+    int templatePos = afterPos - 1;
     org.docx4j.wml.ObjectFactory factory = new org.docx4j.wml.ObjectFactory();
     for(int i = 0; i < times;i++){
         Tbl copiedTable = (Tbl) XmlUtils.deepCopy(tempTable);
 
         List<Object> rows = getAllElementFromObject(copiedTable, Tr.class);
-        Tr templateRow = (Tr) rows.get(3);
-        addRowToTable(copiedTable, templateRow, ["MY_N":"MY_N_"+i]);
-        copiedTable.getContent().remove(templateRow);
+        Tr templateRow = (Tr) rows.get(tmpl_row_number);
+        def replacer = [:]
+        replacer.put(placeholder,replacement+"_"+i);
+        //  ["MY_N":"MY_N_"+i]
+        editRowInTable(copiedTable, templateRow,replacer);
+        //copiedTable.getContent().remove(templateRow);
 
         org.docx4j.wml.P  p = factory.createP();
         b.getEGBlockLevelElts().add(afterPos, p);
@@ -958,12 +1062,13 @@ private void copyTablesFromTmpl(String[] placeholders, List<Map<String, String>>
         //template.getMainDocumentPart().addParagraphOfText("");
         //template.getMainDocumentPart().addObject(copiedTable);
     }
+    b.getEGBlockLevelElts().remove(templatePos);
 
 }
 def writeTramsToDoc2(def trams){
-    WordprocessingMLPackage template = getTemplate("/home/reshet/transport/trams/report_template.docx");
+    WordprocessingMLPackage template = getTemplate("/home/reshet/transport/trams/report_example_true5.docx");
 
-    //ObjectFactory factory = Context.getWmlObjectFactory();
+    ObjectFactory factory = Context.getWmlObjectFactory();
 
     //Tbl table = factory.createTbl();
     //addBorders(table);
@@ -977,11 +1082,11 @@ def writeTramsToDoc2(def trams){
     //addTableCell(tableRow, "Початок роботи",factory,wordMLPackage,true,false,20);
     //addTableCell(tableRow, "Останнє відправлення",factory,wordMLPackage,true,false,20);
 
-    String placeholder = "SJ_EX1";
-    String toAdd = "jos\ndirksen";
+    //String placeholder = "SJ_EX1";
+    //String toAdd = "jos\ndirksen";
 
     //replaceParagraph(placeholder, toAdd, template, template.getMainDocumentPart());
-    replacePlaceholder(template,"ssssss",placeholder);
+    //replacePlaceholder(template,"ssssss",placeholder);
     //table.getContent().add(tableRow);
     int i = 1;
 
@@ -1001,7 +1106,8 @@ def writeTramsToDoc2(def trams){
     repl3.put("SJ_PERIOD", "period3");*/
 
 
-    String [] repl = ["MY_N","name_route","len_r","try_r","t_start1","t_start2","t_end1","t_end2"];
+    String [] repl = ["MYNTRAM","name_route","len_r","try_r","t_start1","t_start2","t_end1","t_end2"];
+
     def replaces = [];
     trams.each{  tram->
        /* Tr tableRow1 = factory.createTr();
@@ -1013,21 +1119,21 @@ def writeTramsToDoc2(def trams){
         //addTableCell(tableRow1, tram.end,factory,wordMLPackage,false,false,16);
 
         table.getContent().add(tableRow1);*/
-        def replace_row = [MY_N: tram.number,name_route:tram.name,len_r: tram.L,
+        def replace_row = [MYNTRAM: tram.number,name_route:tram.name,len_r: tram.L,
                            try_r:tram.T,
-                           t_start1:tram.start,t_start2:tram.start,
-                           t_end1: tram.end,t_end2: tram.end]
+                           T_start1:tram.start,T_start2:tram.start,
+                           T_end1: tram.end,T_end2: tram.end]
         replaces.add(replace_row);
         i++;
     }
-    //replaceTable1(repl, replaces, template);
+    replaceTable1(repl, replaces, template);
 
-    copyTablesFromTmpl(repl,replaces,template,3);
+    //copyTablesFromTmpl(repl[0],"MY_N_TRAM",template,3);
 
-    //String filenameHint = null;
-    //String altText = null;
-    //int id1 = 0;
-    //int id2 = 1;
+    String filenameHint = null;
+    String altText = null;
+    int id1 = 0;
+    int id2 = 1;
 
     //def route8 = readStopsInfo("/home/reshet/transport/trams/input/",12);
     //println route8["pik"];
@@ -1047,55 +1153,84 @@ def writeTramsToDoc2(def trams){
     wordMLPackage.getMainDocumentPart().addStyledParagraphOfText("Subtitle","Схеми та характеристики трамвайних маршрутів");
 */
 
-    /*def transp_measures = readAllRoutesInfo("/home/reshet/transport/trams/input/");
+    def transp_measures = readAllRoutesInfo("/home/reshet/transport/trams/input/");
     def transp_set = transp_measures.keySet();
+    copyTablesFromTmpl("MY_NUMB_TRAM_TMPL","MY_NUMB_TRAM",template,transp_set.size(),1);
+    i = 0;
     transp_set.each{  tram_n->
 
         def tram_info = findTramInfo(tram_n,trams)
-        Tbl tbl = factory.createTbl();
-        Tr tableRow1 = factory.createTr();
-        addTableCell(tableRow1, "№ Номер маршруту",factory,wordMLPackage,true,false,24);
-        addTableCell(tableRow1, "Назва маршруту",factory,wordMLPackage,true,false,24);
-        addTableCell(tableRow1, "Перевізник",factory,wordMLPackage,true,false,24);
-        tbl.getContent().add(tableRow1);
-
-        Tr tableRow2 = factory.createTr();
-        addTableCell(tableRow2, tram_n,factory,wordMLPackage,false,false,20);
+        def replaces2 = [];
         def name = "";
         def agency = "";
         if(tram_info != null){
             name = tram_info.name;
             agency = tram_info.agency;
         }
-        addTableCell(tableRow2, name,factory,wordMLPackage,false,false,20);
-        addTableCell(tableRow2, agency,factory,wordMLPackage,false,false,20);
-        tbl.getContent().add(tableRow2);
+        def tram_n_holder = "MY_NUMB_TRAM_"+i;
+        String [] repl2 = [tram_n_holder];
+        def replace_row = [name_route:name,Name_agency:agency];
+        replace_row.put(tram_n_holder,tram_n);
+        replaces2.add(replace_row);
 
-        Tr tableRow3 = factory.createTr();
-        addTableCell(tableRow3, "Схема маршруту",factory,wordMLPackage,true,false,24);
-        tbl.getContent().add(tableRow3);
-
-       *//* Tr tableRow4 = factory.createTr();
-        tbl.getContent().add(tableRow4);*//*
-
-       // def route = readStopsInfo("/home/reshet/transport/trams/input/",tram_n.number);
-        //println route["pik"];
 
         byte [] img_r = transp_measures[tram_n]["img"];
         if(img_r != null){
-            org.docx4j.wml.P pp = newImage( wordMLPackage, img_r,filenameHint, altText,id1, id2,6000);
-            //P paragraphWithImage = addInlineImageToParagraph(createInlineImage(file));
-            //addTableCell(tr, paragraphWithImage);
-            // Now add our p to the document
-            Tr tblRowImg = factory.createTr();
-            Tc tblCell = factory.createTc();
-            tblCell.getContent().add(pp);
-            tblRowImg.getContent().add(tblCell);
-
-            tbl.getContent().add(tblRowImg);
+            //org.docx4j.wml.P pp = newImage(template, img_r,filenameHint, altText,id1, id2,9300);
+            org.docx4j.wml.R r = newImageRun(template, img_r,filenameHint, altText,id1, id2,9300);
+            List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
+            Tbl tTable = getTemplateTable(tables,tram_n_holder);
+            List<Object> rows = getAllElementFromObject(tTable, Tr.class);
+            replaceMapImage(factory,r,rows.get(3))
 
         }
 
+        //replaceTable1(repl2, replaces2, template);
+
+
+
+        def reps = []
+        String [] repl3 = [tram_n_holder];
+
+
+        def first = transp_measures[tram_n]["pik"]["first"];
+        def reverse = transp_measures[tram_n]["pik"]["reverse"];
+        int k_rows = Math.max(first.size(),reverse.size());
+        for(int j = 0; j < k_rows;j++){
+            def replrow = [:];
+            //Tr tableR = factory.createTr();
+            if(j<first.size()){
+                replrow.put("stop_n_start",(j+1)+"");
+                replrow.put("stop_name_start", first[j].name);
+                //addTableCell(tableR, (j+1)+"",factory,wordMLPackage,false,false,16)
+                //addTableCell(tableR, first[j].name,factory,wordMLPackage,false,false,16)
+            }else{
+                replrow.put("stop_n_start","");
+                replrow.put("stop_name_start","");
+
+                //addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
+                //addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
+            }
+            if(j<reverse.size()){
+                replrow.put("Stop_n_end",(j+1)+"");
+                replrow.put("stop_name_end", reverse[j].name);
+                /*addTableCell(tableR, ""+(j+1),factory,wordMLPackage,false,false,16)
+                addTableCell(tableR, reverse[j].name,factory,wordMLPackage,false,false,16)*/
+            }else{
+                replrow.put("Stop_n_end","");
+                replrow.put("stop_name_end","");
+           /*     addTableCell(tableR, "",factory,wordMLPackage,false,false,16);
+                addTableCell(tableR, "",factory,wordMLPackage,false,false,16);*/
+            };
+            reps.add(replrow);
+            //tbl.getContent().add(tableR);
+        }
+        replaceTable2(repl3, reps, template,6);
+
+        replaceTable3Row(repl2, replace_row, template,1);
+
+
+        /*
         Tr tableRow4 = factory.createTr();
         addTableCell(tableRow4, "Перелік зупинок на маршруті",factory,wordMLPackage,true,true,24,4);
         tbl.getContent().add(tableRow4);
@@ -1155,10 +1290,11 @@ def writeTramsToDoc2(def trams){
         wordMLPackage.getMainDocumentPart().addObject(tbl);
         i++;
     }*/
+        i++;
+    }
 
 
-
-    template.save(new File("/home/reshet/transport/trams/tmpl10.docx"));
+    template.save(new File("/home/reshet/transport/trams/tmpl20.docx"));
 
 
   /*  tmpRun.setText("Загальна інформація про трамвайні маршрути");
