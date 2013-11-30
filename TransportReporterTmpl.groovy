@@ -60,6 +60,17 @@ import javax.xml.bind.JAXBException
 import java.awt.image.BufferedImage;
 
 
+def getSafeCellValue(def cell){
+    switch(cell.getCellType()) {
+        case XSSFCell.CELL_TYPE_NUMERIC:
+            return cell.getNumericCellValue()
+            break;
+        case XSSFCell.CELL_TYPE_STRING:
+            return cell.getStringCellValue()
+            break;
+    }
+}
+
 def readStopsSheet_2ptrn(def sheet){
     //println sheet.getSheetName();
     int first_route_numb_col = 9;
@@ -89,13 +100,15 @@ def readStopsSheet_2ptrn(def sheet){
             if(cell != null){
                 curr_stop = cell.getStringCellValue()
                 if(!curr_stop.equals("")){
-                    def stop_n = row.getCell(first_route_numb_col).getNumericCellValue()
+                    def stop_n = getSafeCellValue(row.getCell(first_route_numb_col));
+
+
                     def in_cell =row.getCell(first_route_in_col);
                     def stop_in = 0;
-                    if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
+                    //if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
                     def out_cell = row.getCell(first_route_out_col)
                     def stop_out = 0;
-                    if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
+                    //if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
                     first_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
                     //println curr_stop
                 }
@@ -108,27 +121,30 @@ def readStopsSheet_2ptrn(def sheet){
     curr_first_route_row = first_route_start_row -1;
     row = sheet.getRow(first_route_start_row -1 );
     cell = row.getCell(reverse_route_start_col);
-    curr_stop = cell.getStringCellValue()
-    while(!curr_stop.equals("") && cell !=null){
-        row = sheet.getRow(curr_first_route_row);
-        cell = row.getCell(reverse_route_start_col);
-        if(cell != null){
-            curr_stop = cell.getStringCellValue()
-            if(!curr_stop.equals("")){
-                def stop_n = row.getCell(reverse_route_numb_col).getNumericCellValue()
-                def in_cell =row.getCell(reverse_route_in_col);
-                def stop_in = 0;
-                if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
-                def out_cell = row.getCell(reverse_route_out_col)
-                def stop_out = 0;
-                if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
-                first_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
-                curr_first_route_row++;
-                //println curr_stop
+    if(cell!=null){
+
+        curr_stop = cell.getStringCellValue()
+        while(!curr_stop.equals("") && cell !=null){
+            row = sheet.getRow(curr_first_route_row);
+            cell = row.getCell(reverse_route_start_col);
+            if(cell != null){
+                curr_stop = cell.getStringCellValue()
+                if(!curr_stop.equals("")){
+                    def stop_n = row.getCell(reverse_route_numb_col).getNumericCellValue()
+                    def in_cell =row.getCell(reverse_route_in_col);
+                    def stop_in = 0;
+                    //if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
+                    def out_cell = row.getCell(reverse_route_out_col)
+                    def stop_out = 0;
+                    //if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
+                    first_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
+                    curr_first_route_row++;
+                    //println curr_stop
+                }
+
             }
 
         }
-
     }
 
     //here determine start row of reverse stops;
@@ -183,58 +199,72 @@ def readStopsSheet_2ptrn(def sheet){
 
     def reverse_stops = []
     row = sheet.getRow(curr_reverse_route_row);
-    cell =  row.getCell(first_route_start_col);
-    curr_stop = cell.getStringCellValue()
-    while(!curr_stop.equals("") && cell != null && row!=null){
-
-        row = sheet.getRow(curr_reverse_route_row);
-        if(row == null) break;
-        cell = row.getCell(first_route_start_col);
+    if(row != null){
+        println "row "+curr_reverse_route_row+" col "+first_route_start_col
+        cell =  row.getCell(first_route_start_col);
         if(cell != null){
             curr_stop = cell.getStringCellValue()
-            //println curr_stop;
-            if(!curr_stop.equals("")){
-                def stop_n = row.getCell(first_route_numb_col).getNumericCellValue()
-                def in_cell =row.getCell(first_route_in_col);
-                def stop_in = 0;
-                if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
-                def out_cell = row.getCell(first_route_out_col)
-                def stop_out = 0;
-                if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
-                reverse_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
-                curr_reverse_route_row++;
-                //println curr_stop
+            while(!curr_stop.equals("") && cell != null && row!=null){
+
+                row = sheet.getRow(curr_reverse_route_row);
+                if(row == null) break;
+                cell = row.getCell(first_route_start_col);
+                if(cell != null){
+                    curr_stop = cell.getStringCellValue()
+                    //println curr_stop;
+                    if(!curr_stop.equals("")){
+                        def stop_n = row.getCell(first_route_numb_col).getNumericCellValue()
+                        def in_cell =row.getCell(first_route_in_col);
+                        def stop_in = 0;
+                        //if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
+                        def out_cell = row.getCell(first_route_out_col)
+                        def stop_out = 0;
+                        //if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
+                        reverse_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
+                        curr_reverse_route_row++;
+                        //println curr_stop
+                    }
+                }
             }
         }
     }
+
+
 
     curr_reverse_route_row = reverse_route_start_row -1;
     row = sheet.getRow(reverse_route_start_row -1 );
-    cell = row.getCell(reverse_route_start_col);
-    curr_stop = cell.getStringCellValue()
-    while(!curr_stop.equals("") && cell !=null){
-        row = sheet.getRow(curr_reverse_route_row);
-        if(row == null) break;
+    if(row!= null) {
         cell = row.getCell(reverse_route_start_col);
+        println "row "+(reverse_route_start_row -1) +" col "+ reverse_route_start_col
         if(cell != null){
+            //println reverse_stops;
             curr_stop = cell.getStringCellValue()
-            if(!curr_stop.equals("")){
-                //println curr_stop;
-                def stop_n = row.getCell(reverse_route_numb_col).getNumericCellValue()
-                def in_cell =row.getCell(reverse_route_in_col);
-                def stop_in = 0;
-                if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
-                def out_cell = row.getCell(reverse_route_out_col)
-                def stop_out = 0;
-                if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
-                reverse_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
-                curr_reverse_route_row++;
-                //println curr_stop
+            while(!curr_stop.equals("") && cell !=null){
+                row = sheet.getRow(curr_reverse_route_row);
+                if(row == null) break;
+                cell = row.getCell(reverse_route_start_col);
+                if(cell != null){
+                    curr_stop = cell.getStringCellValue()
+                    if(!curr_stop.equals("")){
+                        //println curr_stop;
+                        def stop_n = row.getCell(reverse_route_numb_col).getNumericCellValue()
+                        def in_cell =row.getCell(reverse_route_in_col);
+                        def stop_in = 0;
+                        //if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
+                        def out_cell = row.getCell(reverse_route_out_col)
+                        def stop_out = 0;
+                        //if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
+                        reverse_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
+                        curr_reverse_route_row++;
+                        //println curr_stop
+                    }
+
+                }
+
             }
-
         }
-
     }
+
     //println first_stops;
     //println reverse_stops;
 
@@ -273,10 +303,10 @@ def readStopsSheet_1ptrn(def sheet){
                 def stop_n = row.getCell(first_route_numb_col).getNumericCellValue()
                 def in_cell =row.getCell(first_route_in_col);
                 def stop_in = 0;
-                if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
+                //if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
                 def out_cell = row.getCell(first_route_out_col)
                 def stop_out = 0;
-                if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
+                //if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
                 first_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
                 curr_first_route_row++;
                 //println curr_stop
@@ -301,10 +331,10 @@ def readStopsSheet_1ptrn(def sheet){
                 def stop_n = row.getCell(reverse_route_numb_col).getNumericCellValue()
                 def in_cell =row.getCell(reverse_route_in_col);
                 def stop_in = 0;
-                if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
+                //if(in_cell!=null)stop_in = in_cell.getNumericCellValue()
                 def out_cell = row.getCell(reverse_route_out_col)
                 def stop_out = 0;
-                if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
+                //if(out_cell!=null)stop_out = out_cell.getNumericCellValue()
                 reverse_stops.add([n:stop_n,name:curr_stop,in:stop_in,out:stop_out])
                 curr_first_route_row++;
                 //println curr_stop
@@ -400,17 +430,17 @@ def readStopsInfo(def folder,def route_number){
 }
 
 
-def readAllRoutesInfo(def folder,def type){
+def readAllRoutesInfo(def folder,def type,def mapper){
     Workbook w;
     def transp_measures = [:]
 
     try {
         File fold = new File(folder);
-        File [] files = fold.listFiles();
+        File [] files = fold.listFiles().sort{it.name};
         println files;
         files.each{
             fl->
-                //println fl.path
+                println "reading "+ fl.path
 
                 def transp_measuring = [:]
                 def route_number  = fl.name.substring(0,fl.name.length()-5);
@@ -418,14 +448,15 @@ def readAllRoutesInfo(def folder,def type){
                 def route_number3 = route_number2[1];
 
 
-                println "reading "+ fl.path
+
                 println "route number is" + route_number3;
                 FileInputStream filestr = new FileInputStream(fl);
                 XSSFWorkbook workbook = new XSSFWorkbook(filestr);
 
                 //byte [] img = readRouteMap(workbook);
-                byte [] img = getFreshRouteImage("/home/reshet/transport/fresh_maps_all/",route_number3,type);
-
+                byte [] img = getFreshRouteImage("/home/reshet/transport/fresh_maps_all/",route_number3,type,mapper);
+                //here read old version with ads if no clean img found
+                if(img == null) img = readRouteMap(workbook);
                 XSSFSheet sheet_pik = workbook.getSheetAt(0);
                 //XSSFSheet sheet_mez = workbook.getSheetAt(1);
                 //XSSFSheet sheet_vih = workbook.getSheetAt(2);
@@ -527,6 +558,99 @@ def readTrolsInfo(Sheet sheet){
             transps.add(transp)
         }
     }
+    return transps;
+}
+def getBusesFromAll(def marsh){
+    def buses = []
+    marsh.each{
+        m->
+            if(m.agency == "КП \"Київпастранс\""){
+                buses.add(m);
+        }
+    }
+    return buses;
+}
+def readMarshInfo(Workbook w){
+    def transps = []
+    int agency_col = 0;
+    int number_col = 0;
+    int name_col = 1;
+    int L_col = 2;
+    int T_col = 3;
+    int startrow = 0;
+    int endrow = 0;
+
+    String curr_depo = ""
+    for(int shit = 3; shit<11;shit++){
+        switch (shit){
+            case 3:
+               startrow = 6;
+               endrow = 40;
+               agency_col = 1;
+               break;
+            case 4:
+                startrow = 5;
+                endrow = 42;
+                agency_col = 0;
+                break;
+            case 5:
+                startrow = 5;
+                endrow = 40;
+                agency_col = 0;
+                break;
+            case 6:
+                startrow = 4;
+                endrow = 50;
+                agency_col = 0;
+                break;
+            case 7:
+                startrow = 5;
+                endrow = 38;
+                agency_col = 0;
+                break;
+            case 8:
+                startrow = 5;
+                endrow = 52;
+                agency_col = 0;
+                break;
+            case 9:
+                startrow = 4;
+                endrow = 36;
+                agency_col = 0;
+                break;
+            case 10:
+                startrow = 4;
+                endrow = 33;
+                agency_col = 0;
+                break;
+        }
+        def sheet = w.getSheet(shit);
+        for (int i = startrow; i < endrow; i++) {
+            String test =  sheet.getCell(name_col, i).getContents();
+            if(shit == 3) test = sheet.getCell(number_col, i).getContents();
+            String depo =  sheet.getCell(agency_col, i).getContents();
+            if(test=="" && curr_depo == "")curr_depo = depo;
+            if(test=="" && depo != curr_depo)curr_depo = depo;
+            def number =  sheet.getCell(number_col, i).getContents();
+            if(test !="" && !test.contains("Всього")){
+                /*for(int j = 0;j< 20;j++){
+                    print sheet.getCell(T_col+j, i).getContents()+"  "
+                }
+                println "";*/
+                def transp = [agency:curr_depo,
+                        number:number,
+                        name:sheet.getCell(name_col, i).getContents(),
+                        L:sheet.getCell(L_col, i).getContents(),
+                        T:sheet.getCell(T_col, i).getContents(),
+                        start:"",
+                        end:""
+                ]
+                println transp
+                transps.add(transp)
+            }
+        }
+    }
+
     return transps;
 }
 
@@ -749,20 +873,33 @@ def createTableOfStops(def stops){
     return table;
 
 }
-byte [] getFreshRouteImage(def folder,def route_number,def type){
+
+def readMapsMapper(){
+    def map = [:]
+    File f = new File("/home/reshet/transport/maps_eway_mapper.csv");
+    f.eachLine {ln->
+        def arr = ln.split(";");
+        map.put(arr[0],arr[1]);
+    }
+    return map;
+}
+byte [] getFreshRouteImage(def folder,def route_number,def type,def mapper){
     File fold = new File(folder);
     byte [] ans = null;
     fold.listFiles().each{
       fl->
         def rname = fl.name.split("_")[0];
-        def r_index = Integer.parseInt(fl.name.split("_")[1]);
+        def f_index = fl.name.split("_")[1];
+          //println f_index;
+          if(mapper.get(f_index) == null) return;
+          def r_index = Integer.parseInt(mapper.get(f_index));
           if(rname == route_number
             && (
-                (type == 1 && r_index>= 262 && r_index <283)
+                (type == 1 && r_index>= 296 && r_index <317)
                 ||
-                (type == 2 && r_index>= 283 && r_index <320)
+                (type == 2 && r_index>= 258 && r_index <295)
                 ||
-                ((type == 3 || type == 4) && ((r_index>= 0 && r_index <262) || r_index>= 325))
+                ((type == 3 || type == 4) && ((r_index>= 0 && r_index <257) || r_index>= 321))
           )
           ){
               //File imageFile = fl;
@@ -1043,10 +1180,17 @@ def writeSch(def transps,def template,def ident){
 
     def replaces = [];
     transps.each{  transp->
+/*
         def replace_row = [name_route:transp.name,len_r: transp.L,
                 try_r:transp.T,
                 T_start1:transp.start,T_start2:transp.start,
                 T_end1: transp.end,T_end2: transp.end]
+*/
+        def replace_row = [nameroute:transp.name,lenr: transp.L,
+                tryr:transp.T,
+                T_start1:transp.start,T_start2:transp.start,
+                T_end1: transp.end,T_end2: transp.end]
+
         replace_row.put(ident, transp.number)
         replaces.add(replace_row);
         i++;
@@ -1054,14 +1198,14 @@ def writeSch(def transps,def template,def ident){
     replaceTable1(repl, replaces, template);
 
 }
-def writeRoutes(def template,def transps,def input_path,def base_placeholder,def type){
+def writeRoutes(def template,def transps,def input_path,def base_placeholder,def type,def mapper){
     String filenameHint = null;
     String altText = null;
     int id1 = 0;
     int id2 = 1;
 
     org.docx4j.wml.ObjectFactory factory = new org.docx4j.wml.ObjectFactory();
-    def transp_measures = readAllRoutesInfo(input_path,type);
+    def transp_measures = readAllRoutesInfo(input_path,type,mapper);
     def transp_set = transp_measures.keySet();
     //copyTablesFromTmpl(base_placeholder+"_TMPL",base_placeholder,template,transp_set.size(),1);
     copyTablesFromTmpl(base_placeholder+"TMPL",base_placeholder,template,transp_set.size(),1);
@@ -1076,9 +1220,10 @@ def writeRoutes(def template,def transps,def input_path,def base_placeholder,def
             name = tram_info.name;
             agency = tram_info.agency;
         }
+        println "transforming "+tram_n+" "+name+" marshrut";
         def tram_n_holder = base_placeholder+"_"+i;
         String [] repl2 = [tram_n_holder];
-        def replace_row = [name_route:name,Name_agency:agency];
+        def replace_row = [nameroute:name,nameagency:agency];
         replace_row.put(tram_n_holder,tram_n);
         replaces2.add(replace_row);
 
@@ -1124,32 +1269,38 @@ def writeRoutes(def template,def transps,def input_path,def base_placeholder,def
     }
 
 }
+
 def writeReport(){
-    WordprocessingMLPackage template = getTemplate("/home/reshet/transport/trams/report_example_true8.docx");
+
+    WordprocessingMLPackage template = getTemplate("/home/reshet/transport/trams/report_example_true12.docx");
     File trams_timetable = new File("/home/reshet/transport/trams/trams_timetable1.xls");
 
     Workbook w;
     try {
+        def mapsmapper = readMapsMapper();
         w = Workbook.getWorkbook(trams_timetable);
         // Get the first sheet
         Sheet sheet = w.getSheet(0);
+
         def trams = readTramsInfo(sheet);
         def trols = readTrolsInfo(w.getSheet(1));
 
-        //def buss = readTramsInfo(sheet);
-        //def marshs = readTramsInfo(sheet);
+        def marshs = readMarshInfo(w);
+        def buss = getBusesFromAll(marshs);
+        marshs.removeAll(buss);
+
 
         writeSch(trams,template,"MYNTRAM")
         writeSch(trols,template,"MYNTROL")
-        //writeSch(buss,template,"MYNBUS")
-        //writeSch(marshs,template,"MYNMARSH")
+        writeSch(buss,template,"MYNBUS")
+        writeSch(marshs,template,"MYNMARSH")
 
-        writeRoutes(template,trams,"/home/reshet/transport/trams/input/","MY_NUMB_TRAM_",1)
-        writeRoutes(template,trols,"/home/reshet/transport/trams/троллейбус/","MYNUMBTROL",2)
-        //writeRoutes(template,"/home/reshet/transport/trams/автобус/","MY_NUMB_BUS",3)
-        //writeRoutes(template,"/home/reshet/transport/trams/маршрутка/","MY_NUMB_MARSH",4)
+        writeRoutes(template,trams,"/home/reshet/transport/trams/input/","MY_NUMB_TRAM_",1,mapsmapper)
+        writeRoutes(template,trols,"/home/reshet/transport/trams/троллейбус/","MYNUMBTROL",2,mapsmapper)
+        writeRoutes(template,buss,"/home/reshet/transport/trams/автобус/","MYNUMBBUS",3,mapsmapper)
+        writeRoutes(template,marshs,"/home/reshet/transport/trams/маршрутка/","MYNUMBMARSH",4,mapsmapper)
 
-        template.save(new File("/home/reshet/transport/trams/tmpl23.docx"));
+        template.save(new File("/home/reshet/transport/trams/final_report_full4.docx"));
 
     } catch (BiffException e) {
         e.printStackTrace();

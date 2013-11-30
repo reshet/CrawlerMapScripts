@@ -37,19 +37,21 @@ public static void screenGrab(def route_link,String route_name){
 def xml = slurper.parseText(text)
 
 //getting screens code fast
-GParsPool.withPool{
-    xml."**".findAll { it.@id.toString().contains("showRoute")}.eachWithIndexParallel {
-        elem, index ->
+   // File f = new File("/home/reshet/transport/maps_eway_mapper.csv");
+  //  f.createNewFile()
+    //f.withWriter { fl->
+        xml."**".findAll { it.@id.toString().contains("showRoute")}.eachWithIndex {
+            elem, index ->
 
-                def str = index+ " "+elem+" "+elem.@id.toString();
-                println str;
-                //logfile.withWriterAppend {f -> f << new Date().getDateTimeString() +" __ making screen " + str+"\n"}
-                String route_name = elem.text().toString()
-                route_name = route_name.replaceAll(" ","");
-                String route_link = elem.@id.toString()
-                route_link = route_link.substring(9,route_link.length())
-                screenGrab(route_link,route_name)
+                    def str = index+ " "+elem+" "+elem.@id.toString();
+                    println str;
+                    //logfile.withWriterAppend {f -> f << new Date().getDateTimeString() +" __ making screen " + str+"\n"}
+                    String route_name = elem.text().toString()
+                    route_name = route_name.replaceAll(" ","");
+                    String route_link = elem.@id.toString()
+                    route_link = route_link.substring(9,route_link.length())
+                    //screenGrab(route_link,route_name)
+                  //  fl << route_link+";"+index+"\n"
 
-
-    }
-}
+        }
+   // }
