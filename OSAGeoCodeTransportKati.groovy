@@ -8,11 +8,11 @@
  */
 
 
-  def filename = "25KMIS1-1"
-  def fileExt = ".txc";
+  def filename = args[0]//"25KMIS1-1"
+  //def fileExt = ".txc";
   def defaultPath = "/home/geocode/";
-  File f = new File(defaultPath + filename + fileExt)
-  File f3 = new File(defaultPath + "coded_" + filename + fileExt)
+  File f = new File(defaultPath + filename)
+  File f3 = new File(defaultPath + "coded_" + filename)
   f3.createNewFile()
 
 final File logfile = new File("/home/geocode/geocoding_cati.log");
@@ -113,9 +113,13 @@ logfile.withWriterAppend {
         lf << new Date().getDateTimeString() +" __ " + "Start geocoding cati from OSA"+"\n"
 }
 
-f3.withWriter("UTF-8", {
+f3.withWriter(
+        //"UTF-8",
+        {
     ff3->
-    f.withReader("UTF-8", {
+    f.withReader(
+            //"UTF-8",
+            {
         ff2->
             int i = 0
             ff2.eachLine {
