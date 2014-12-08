@@ -9,6 +9,7 @@
 
 
   def filename = args[0]//"25KMIS1-1"
+  def addressVars = ["23", "24", "25"]
   //def fileExt = ".txc";
   def defaultPath = "/home/geocode/";
   File f = new File(defaultPath + filename)
@@ -18,20 +19,6 @@
 final File logfile = new File("/home/geocode/geocoding_cati.log");
 if(!logfile.exists())logfile.createNewFile();
 //def builder = new groovy.json.JsonBuilder()
-def kapi_codes = [:]
-def kapi_names = [:]
-
-/*f.withReader {
-    ff->
-        ff.eachLine {
-            ln ->
-                    def arr = ln.split(";");
-                    kapi_codes[arr[0]] = arr[1]
-                    kapi_names[arr[1]] = arr[4]
-                }
-                i++
-        }
-}*/
 
 boolean hasGeocode(String str){
     //println "hasgeocode: "+str;
@@ -79,9 +66,9 @@ def parseGeocode(String str){
    return ans;
 }
 
-def geocodeAddress(String str){
+def geocodeAddress(String str, String region){
 
-    String geoc = GoogleGeocoderCached.geocode(str,true,true)
+    String geoc = GoogleGeocoderCached.geocode(str,true,true, region)
     //println geoc
     if (geoc != "no definite geocode") {
 
@@ -94,7 +81,7 @@ def geocodeAddress(String str){
             //ff3 << ", \"lat\":"+coor.lb+", \"lng\":"+coor.mb
 
             //println address+" "+coor.lb+" "+coor.mb
-            return [coor.lb,coor.mb]
+            return [coor.lb,coor.mb, coor.address]
         }
     } else {
         final File logfile = new File("/home/geocode/geocoding_cati.log");
@@ -127,18 +114,29 @@ f3.withWriter(
                     def line = ln;
                     if (ln.contains(";") && !ln.startsWith(";")) {
                         def lnarr = ln.split(";")
-                        def address = lnarr[lnarr.length-1]
-                        if (address.length() > 0) {
-                            //address = new String(address.getBytes("ASCII"), "UTF-8")
-                            logfile.withWriterAppend {
-                                lf ->
-                                    lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
-                                    println address
-                                    home_geo = geocodeAddress("Київ " + address);
-                                    if (home_geo.size() > 0) {
-                                        line += " # " + home_geo.get(0) + " # " + home_geo.get(1)
+                        if (ln.length() >= 2 ) {
+                            def items = lnarr[0].trim().split(" ");
+                            def var = items[items.length - 1]
+                            if (var in addressVars) {
+                                def address = lnarr[lnarr.length-1]
+                                if (address.length() > 0) {
+                                    //address = new String(address.getBytes("ASCII"), "UTF-8")
+                                    logfile.withWriterAppend {
+                                        lf ->
+                                            lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
+                                            println address
+                                            home_geo = geocodeAddress(address, "місто Київ");
+                                            if (home_geo.size() == 0) {
+                                                home_geo = geocodeAddress(address, "Київська область")
+                                            };
+                                            if (home_geo.size() > 0) {
+                                                line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + home_geo.get(2)
+                                            } else {
+                                                line += " # NOT_GEOCODED"
+                                            }
+                                            lf << new Date().getDateTimeString() +" __ " + "HOME_GEOCODE: "+ home_geo+"\n"
                                     }
-                                    lf << new Date().getDateTimeString() +" __ " + "HOME_GEOCODE: "+ home_geo+"\n"
+                                }
                             }
                         }
                     }
