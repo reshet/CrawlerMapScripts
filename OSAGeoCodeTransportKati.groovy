@@ -100,12 +100,14 @@ logfile.withWriterAppend {
         lf << new Date().getDateTimeString() +" __ " + "Start geocoding cati from OSA"+"\n"
 }
 
+String osaEncoding = "Cp866"
+
 f3.withWriter(
-        //"UTF-8",
+        osaEncoding,
         {
     ff3->
     f.withReader(
-            //"UTF-8",
+            osaEncoding,
             {
         ff2->
             int i = 0
@@ -120,7 +122,7 @@ f3.withWriter(
                             if (var in addressVars) {
                                 def address = lnarr[lnarr.length-1]
                                 if (address.length() > 0) {
-                                    //address = new String(address.getBytes("ASCII"), "UTF-8")
+                                    //address = new String(address.getBytes(osaEncoding), "UTF-8")
                                     logfile.withWriterAppend {
                                         lf ->
                                             lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
@@ -130,7 +132,7 @@ f3.withWriter(
                                                 home_geo = geocodeAddress(address, "Київська область")
                                             };
                                             if (home_geo.size() > 0) {
-                                                line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + home_geo.get(2)
+                                                line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + new String(home_geo.get(2).getBytes(), osaEncoding)
                                             } else {
                                                 line += " # NOT_GEOCODED"
                                             }
