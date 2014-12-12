@@ -39,53 +39,6 @@
 
 final File logfile = new File("/home/geocode/geocoding_cati.log");
 if(!logfile.exists())logfile.createNewFile();
-//def builder = new groovy.json.JsonBuilder()
-
-boolean hasGeocode(String str){
-    //println "hasgeocode: "+str;
-    if(str == null) return false;
-    if(str.size()==0) return false;
-    //println "hasgeocode-checked";
-
-    final int count = 6;
-    int count_my = 0;
-
-    //println "hasgeocode-start";
-    for(int i = 0; i < str.length();i++)
-    {
-      //  println "hasgeocode-cycle "+i;
-
-        Character c = str.charAt(i);
-        if (c.isDigit())count_my++;
-        if(count_my>= count)return true;
-    }
-    //println "hasgeocode-end";
-
-    if(count_my>= count)return true;
-    return false;
-}
-
-def parseGeocode(String str){
-   def ans = []
-    if(str.contains(",")){
-        def arr = str.split(",");
-        if(arr.size()==2){
-            ans[0] = arr[0].trim();
-            ans[1] = arr[1].trim();
-        }
-
-    }
-   else if(str.contains(" ")){
-       def arr = str.split(" ");
-        if(arr.size() == 2){
-            ans[0] = arr[0];
-            ans[1] = arr[1];
-        }
-
-   }
-
-   return ans;
-}
 
 def geocodeAddress(String str, String region){
 
