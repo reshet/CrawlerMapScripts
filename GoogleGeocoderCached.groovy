@@ -31,7 +31,7 @@ class GoogleGeocoderCached {
             //println "geocoding..."
             //kiev region bounds:
             def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
-            sleep(300);
+            sleep(250);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
             if (strict && area_level_bound != null) {
                 query+="&components=country:UA|administrative_area_level_1:" + URLEncoder.encode(area_level_bound)
@@ -40,7 +40,7 @@ class GoogleGeocoderCached {
             String google_ans = (query).toURL().getText()
             def slurper = new JsonSlurper()
             def result = slurper.parseText(google_ans)
-            println result
+            //println result
             //println result.status+":"
             if(result.status == "OK"){
 

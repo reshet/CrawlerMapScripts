@@ -122,7 +122,8 @@ logfile.withWriterAppend {
 }
 
 String osaEncoding = "Cp866"
-
+def addressCount = 0;
+def geocodedAddressCount = 0;
 f3.withWriter(
         osaEncoding,
         {
@@ -143,6 +144,7 @@ f3.withWriter(
                             if (var in addressVars) {
                                 def address = lnarr[lnarr.length-1]
                                 if (address.length() > 0) {
+                                    addressCount++
                                     //address = new String(address.getBytes(osaEncoding), "UTF-8")
                                     logfile.withWriterAppend {
                                         lf ->
@@ -154,6 +156,7 @@ f3.withWriter(
                                             };
                                             if (home_geo.size() > 0) {
                                                 line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + home_geo.get(2)
+                                                geocodedAddressCount++
                                             } else {
                                                 line += " # NOT_GEOCODED"
                                             }
@@ -171,5 +174,7 @@ f3.withWriter(
     logfile.withWriterAppend {
         lf ->
             lf << new Date().getDateTimeString() +" __ " + "END geocoding cati OSA file"+"\n"
+            lf << new Date().getDateTimeString() +" __ " + "TOTAL ADDRESSES = " + addressCount + ", GEOCODED ADDRESSES = " + geocodedAddressCount+ "\n"
+            lf << new Date().getDateTimeString() +" __ " + "SUCCESS RATIO: " + (geocodedAddressCount * 1.0 / addressCount) * 100 + "%.\n"
     }
 })
