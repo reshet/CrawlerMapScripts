@@ -40,9 +40,9 @@
 final File logfile = new File("/home/geocode/geocoding_cati.log");
 if(!logfile.exists())logfile.createNewFile();
 
-def geocodeAddress(String str, String region){
+def geocodeAddress(String str, String region, String bounds){
 
-    String geoc = GoogleGeocoderCached.geocode(str,true,true, region)
+    String geoc = GoogleGeocoderCached.geocode(str,true,true, region, bounds)
     //println geoc
     if (geoc != "no definite geocode") {
 
@@ -103,9 +103,10 @@ f3.withWriter(
                                         lf ->
                                             lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
                                             println address
-                                            home_geo = geocodeAddress(address, "місто Київ");
+                                            def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
+                                            home_geo = geocodeAddress(address, "місто Київ", kiev_bounds);
                                             if (home_geo.size() == 0) {
-                                                home_geo = geocodeAddress(address, "Київська область")
+                                                home_geo = geocodeAddress(address, "Київська область", kiev_bounds)
                                             };
                                             if (home_geo.size() > 0) {
                                                 line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + home_geo.get(2)

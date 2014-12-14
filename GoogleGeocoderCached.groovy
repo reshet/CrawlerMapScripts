@@ -19,23 +19,23 @@ class GoogleGeocoderCached {
         if(!(result instanceof net.sf.json.JSONNull))return result
         else return null
     }
-    public static String geocode(String address,boolean local,boolean strict = false, String area_level_bound){
+    public static String geocode(String address,boolean local,boolean strict = false, String area_level_bound, String bounds){
         String ans_cache = ""
         String url = local?cache_url_local:cache_url_remote
         url+="?action=gt&address="+URLEncoder.encode(address);
         String cache_ans = url.toURL().getText()
         //println address +" "+ cache_ans
-        if(cache_ans!="Not in cache") return cache_ans
-        else
-        {
+        if(cache_ans!="Not in cache") {
+            return cache_ans
+        } else {
             //println "geocoding..."
             //kiev region bounds:
-            def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
             sleep(250);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
             if (strict && area_level_bound != null) {
-                query+="&components=country:UA|administrative_area_level_1:" + URLEncoder.encode(area_level_bound)
-                query+="&bounds=" + kiev_bounds
+                //println "BOUNDS: " + area_level_bound + "  " + bounds;
+                query+="&components=administrative_area:" + URLEncoder.encode(area_level_bound)
+                query+="&bounds=" + bounds
             }
             String google_ans = (query).toURL().getText()
             def slurper = new JsonSlurper()
@@ -48,15 +48,16 @@ class GoogleGeocoderCached {
                 def lng = result.results[0].geometry.location.lng
                 def loc_type = result.results[0].geometry.location_type
 
-                if(lat != null && lng != null){
+                if(lat != null && lng != null && loc_type != "APPROXIMATE"){
                     String url2 = local?cache_url_local:cache_url_remote
                     def formatted = result.results[0].formatted_address
                     //println formatted
                     url2+="?action=pt&address="+URLEncoder.encode(address)+"&long="+lng+"&lat="+lat+"&g_address="+URLEncoder.encode(formatted)+"&type="+loc_type;
 
                     return url2.toURL().getText()
+                } else {
+                    return "no definite geocode";
                 }
-
             } else {
                 return "no definite geocode";
             }
