@@ -56,6 +56,17 @@ String osaEncoding = "Cp866"
                                     caseMap[var + "_lng"] = address_items[2]
                                     caseMap[var + "_g_adr"] = address_items[3]
                                     Matrix[Case] = caseMap;
+                                } else if (address_items.length == 2) {
+                                    if (!Matrix.containsKey(Case)) {
+                                        Matrix[Case] = [:]
+                                    }
+                                    caseMap = Matrix[Case]
+                                    caseMap["case"] = Case
+                                    caseMap[var] = address_items[0]
+                                    caseMap[var + "_lat"] = ""
+                                    caseMap[var + "_lng"] = ""
+                                    caseMap[var + "_g_adr"] = ""
+                                    Matrix[Case] = caseMap;
                                 }
                             }
                         }

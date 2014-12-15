@@ -30,7 +30,7 @@ class GoogleGeocoderCached {
         } else {
             //println "geocoding..."
             //kiev region bounds:
-            sleep(250);
+            sleep(1000);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
             if (strict && area_level_bound != null) {
                 //println "BOUNDS: " + area_level_bound + "  " + bounds;
@@ -40,8 +40,8 @@ class GoogleGeocoderCached {
             String google_ans = (query).toURL().getText()
             def slurper = new JsonSlurper()
             def result = slurper.parseText(google_ans)
-            //println result
-            //println result.status+":"
+            println result.results.length
+            println result.status+":"
             if(result.status == "OK"){
 
                 def lat = result.results[0].geometry.location.lat
@@ -59,9 +59,13 @@ class GoogleGeocoderCached {
                     return "no definite geocode";
                 }
             } else {
-                return "no definite geocode";
+                if (result.status == "OVER_QUERY_LIMIT") {
+                    throw new Exception()
+                } else {
+                    return "no definite geocode";
+                }
             }
-            if(result.status == "OVER_QUERY_LIMIT") throw new Exception();
+
         }
     }
 }
