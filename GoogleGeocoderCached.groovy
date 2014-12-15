@@ -30,7 +30,7 @@ class GoogleGeocoderCached {
         } else {
             //println "geocoding..."
             //kiev region bounds:
-            sleep(1000);
+            sleep(300);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
             if (strict && area_level_bound != null) {
                 //println "BOUNDS: " + area_level_bound + "  " + bounds;
@@ -40,17 +40,21 @@ class GoogleGeocoderCached {
             String google_ans = (query).toURL().getText()
             def slurper = new JsonSlurper()
             def result = slurper.parseText(google_ans)
-            println result.results.length
-            println result.status+":"
-            if(result.status == "OK"){
+            //println result.results.length
+            //println result.status+":"
+            //println result.results
+            if (result.status == "OK") {
 
                 def lat = result.results[0].geometry.location.lat
                 def lng = result.results[0].geometry.location.lng
                 def loc_type = result.results[0].geometry.location_type
 
-                if(lat != null && lng != null && loc_type != "APPROXIMATE"){
+                if(lat != null && lng != null){
                     String url2 = local?cache_url_local:cache_url_remote
                     def formatted = result.results[0].formatted_address
+                    if (formatted == "місто Київ, Україна" || formatted == "Київська область, Україна") {
+                        return "no definite geocode";
+                    }
                     //println formatted
                     url2+="?action=pt&address="+URLEncoder.encode(address)+"&long="+lng+"&lat="+lat+"&g_address="+URLEncoder.encode(formatted)+"&type="+loc_type;
 

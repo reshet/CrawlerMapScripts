@@ -47,7 +47,8 @@ def geocodeAddress(String str, String region, String bounds){
     if (geoc != "no definite geocode") {
 
         def coor = GoogleGeocoderCached.parseJSON(geoc)
-        if(coor!= null && coor.lb!= null && coor.mb!= null && coor["loc_type"] != "APPROXIMATE"){
+        //&& coor["loc_type"] != "APPROXIMATE"
+        if(coor!= null && coor.lb!= null && coor.mb!= null){
             def formatted_addr = coor.address;
             def loc_type = "no";
             if(coor.loc_type!=null)loc_type = coor.loc_type;
@@ -98,11 +99,13 @@ f3.withWriter(
                                 def address = lnarr[lnarr.length-1]
                                 if (address.length() > 0) {
                                     addressCount++
+                                    address = address.replaceAll("│","i")
                                     //address = new String(address.getBytes(osaEncoding), "UTF-8")
                                     logfile.withWriterAppend {
                                         lf ->
+
                                             lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
-                                            println address
+                                            //println address
                                             def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
                                             home_geo = geocodeAddress(address, "місто Київ", kiev_bounds);
                                             if (home_geo.size() == 0) {
