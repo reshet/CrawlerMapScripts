@@ -48,6 +48,17 @@ def rotate(filename) {
                                     caseMap[var + "_lng"] = address_items[2]
                                     caseMap[var + "_g_adr"] = address_items[3]
                                     Matrix[Case] = caseMap;
+                                } else if (address_items.length == 2) {
+                                    if (!Matrix.containsKey(Case)) {
+                                        Matrix[Case] = [:]
+                                    }
+                                    caseMap = Matrix[Case]
+                                    caseMap["case"] = Case
+                                    caseMap[var] = address_items[0]
+                                    caseMap[var + "_lat"] = ""
+                                    caseMap[var + "_lng"] = ""
+                                    caseMap[var + "_g_adr"] = ""
+                                    Matrix[Case] = caseMap;
                                 }
                             }
                         }
@@ -91,11 +102,11 @@ def rotate(filename) {
 def geocodeAddress(String str, String region, String bounds){
 
     String geoc = GoogleGeocoderCached.geocode(str,true,true, region, bounds)
-    println geoc
+    //println geoc
     if (geoc != "no definite geocode") {
 
         def coor = GoogleGeocoderCached.parseJSON(geoc)
-        if(coor!= null && coor.lb!= null && coor.mb!= null && coor["loc_type"] != "APPROXIMATE"){
+        if(coor!= null && coor.lb!= null && coor.mb!= null){
             def formatted_addr = coor.address;
             def loc_type = "no";
             if(coor.loc_type!=null)loc_type = coor.loc_type;
@@ -148,10 +159,11 @@ def geocode(filename) {
                                         def address = lnarr[lnarr.length-1]
                                         if (address.length() > 0) {
                                             addressCount++
+                                            address = address.replaceAll("│","i")
                                             logfile.withWriterAppend {
                                                 lf ->
                                                     lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
-                                                    println address
+                                                    //println address
                                                     def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
                                                     home_geo = geocodeAddress(address, "місто Київ", kiev_bounds);
                                                     if (home_geo.size() == 0) {
