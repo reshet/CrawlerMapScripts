@@ -30,7 +30,7 @@ class GoogleGeocoderCached {
         } else {
             //println "geocoding..."
             //kiev region bounds:
-            sleep(300);
+            sleep(150);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
             if (strict && area_level_bound != null) {
                 //println "BOUNDS: " + area_level_bound + "  " + bounds;
