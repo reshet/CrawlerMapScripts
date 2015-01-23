@@ -103,27 +103,19 @@ def rotate(filename) {
 
 def geocodeAddress(String str, String region, String bounds){
 
-    String geoc = GoogleGeocoderCached.geocode(str,true,true, region, bounds)
+    def coor = GoogleGeocoderRedisCached.geocode(str,true,true, region, bounds)
     //println geoc
-    if (geoc != "no definite geocode") {
+    if (coor != "no definite geocode") {
 
-        def coor = GoogleGeocoderCached.parseJSON(geoc)
-        if(coor!= null && coor.lb!= null && coor.mb!= null){
-            def formatted_addr = coor.address;
-            def loc_type = "no";
-            if(coor.loc_type!=null)loc_type = coor.loc_type;
-            //if(formatted_addr!=null)address = formatted_addr;
-            //ff3 << ", \"lat\":"+coor.lb+", \"lng\":"+coor.mb
-
-            //println address+" "+coor.lb+" "+coor.mb
-            return [coor.lb,coor.mb, coor.address]
+        if(coor!= null && coor.lat!= null && coor.lng!= null){
+            return [coor.lat, coor.lng, coor.full]
         }
     } else {
         final File logfile = new File("/var/www/geocode/geocoding.log");
         if(!logfile.exists())logfile.createNewFile();
         logfile.withWriterAppend {
             lf ->
-                lf << new Date().getDateTimeString() +" __ " + "geocoding: "+geoc+"\n"
+                lf << new Date().getDateTimeString() +" __ " + "geocoding: "+coor+"\n"
         }
     }
     return []
@@ -164,20 +156,25 @@ def geocode(filename) {
                                             address = address.replaceAll("│","i")
                                             logfile.withWriterAppend {
                                                 lf ->
-                                                    lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
                                                     //println address
-                                                    def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
-                                                    home_geo = geocodeAddress(address, "місто Київ", kiev_bounds);
-                                                    if (home_geo.size() == 0) {
-                                                        home_geo = geocodeAddress(address, "Київська область", kiev_bounds)
-                                                    };
-                                                    if (home_geo.size() > 0) {
-                                                        line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + home_geo.get(2)
-                                                        geocodedAddressCount++
-                                                    } else {
-                                                        line += " # NOT_GEOCODED"
+                                                    try {
+                                                        lf << new Date().getDateTimeString() +" __ " + "LINE " + i +" address = " + address + "\n"
+                                                        def kiev_bounds = "50.193073,29.929461|50.688971,31.114612"
+                                                        home_geo = geocodeAddress(address, "місто Київ", kiev_bounds);
+                                                        if (home_geo.size() == 0) {
+                                                            home_geo = geocodeAddress(address, "Київська область", kiev_bounds)
+                                                        };
+                                                        if (home_geo.size() > 0) {
+                                                            line += " # " + home_geo.get(0) + " # " + home_geo.get(1) + " # " + home_geo.get(2)
+                                                            geocodedAddressCount++
+                                                        } else {
+                                                            line += " # NOT_GEOCODED"
+                                                        }
+                                                        lf << new Date().getDateTimeString() +" __ " + "HOME_GEOCODE: "+ home_geo+"\n"
+                                                    } catch (Exception ex) {
+                                                        lf << new Date().getDateTimeString() +" EXCEPTION OCCURED: " + ex.printStackTrace()+ "\n"
                                                     }
-                                                    lf << new Date().getDateTimeString() +" __ " + "HOME_GEOCODE: "+ home_geo+"\n"
+
                                             }
                                         }
                                     }

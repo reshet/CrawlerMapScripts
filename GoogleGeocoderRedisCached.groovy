@@ -7,38 +7,46 @@
  */
 
 @Grab('net.sf.json-lib:json-lib:2.3:jdk15')
+@Grab('redis.clients:jedis:2.6.2')
+
+
 import net.sf.json.groovy.JsonSlurper
 
-class GoogleGeocoderCached {
-    public static cache_url_local = "http://localhost/InteractiveMaps/php/geocache.php";
-    public static cache_url_remote = "http://survey-archive.com/InteractiveMaps/php/geocache.php";
+class GoogleGeocoderRedisCached {
     public static final File logfile = new File("/var/www/geocode/geocoding.log");
+    public static final redis = new redis.clients.jedis.Jedis("localhost")
     static {
         if(!logfile.exists())logfile.createNewFile();
+        assert "PONG" == redis.ping()
     }
     private static my_key = ""
-    public static def parseJSON(String str){
-        def slurper = new JsonSlurper()
-        def result = slurper.parseText(str)
-        if(!(result instanceof net.sf.json.JSONNull))return result
-        else return null
-    }
-    public static String geocode(String address,boolean local,boolean strict = false, String area_level_bound, String bounds){
+//    public static def parseJSON(String str){
+//        def slurper = new JsonSlurper()
+//        def result = slurper.parseText(str)
+//        if(!(result instanceof net.sf.json.JSONNull))return result
+//        else return null
+//    }
+//    public static cacheToGeocodingResponse(def cacheAns) {
+//        '{"lb":' + cacheAns.lat +
+//                ',"mb":' + cacheAns.lng +
+//                ',"address":"' + cacheAns.full +
+//                '","loc_type":"' + cacheAns.precision +
+//                '"}'
+//    }
+    public static def geocode(String address,boolean local,boolean strict = false, String area_level_bound, String bounds){
         String ans_cache = ""
-        String url = local?cache_url_local:cache_url_remote
-        url+="?action=gt&address="+URLEncoder.encode(address);
-        String cache_ans = url.toURL().getText()
-        //println address +" "+ cache_ans
-        if(cache_ans!="Not in cache") {
+
+        if(redis.exists(address)) {
+            def cacheAns = redis.hgetAll(address);
             logfile.withWriterAppend {
                 lf ->
-                    lf << new Date().getDateTimeString() +" Return from cache: " + cache_ans + "\n"
+                    lf << new Date().getDateTimeString() +" Return from cache: " + cacheAns + "\n"
             }
-            return cache_ans
+            return cacheAns;
         } else {
             //println "geocoding..."
             //kiev region bounds:
-            sleep(150);
+            sleep(250);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
             if (strict && area_level_bound != null) {
                 //println "BOUNDS: " + area_level_bound + "  " + bounds;
@@ -58,15 +66,17 @@ class GoogleGeocoderCached {
                 def loc_type = result.results[0].geometry.location_type
 
                 if(lat != null && lng != null){
-                    String url2 = local?cache_url_local:cache_url_remote
                     def formatted = result.results[0].formatted_address
                     if (formatted == "місто Київ, Україна" || formatted == "Київська область, Україна") {
                         return "no definite geocode";
                     }
-                    //println formatted
-                    url2+="?action=pt&address="+URLEncoder.encode(address)+"&long="+lng+"&lat="+lat+"&g_address="+URLEncoder.encode(formatted)+"&type="+loc_type;
+                    redis.hset(address, "lng", String.valueOf(lng))
+                    redis.hset(address, "lat", String.valueOf(lat))
+                    redis.hset(address, "full", formatted)
+                    redis.hset(address, "precision", loc_type)
 
-                    return url2.toURL().getText()
+                    def fromRedis = redis.hgetAll(address);
+                    return fromRedis;
                 } else {
                     return "no definite geocode";
                 }
