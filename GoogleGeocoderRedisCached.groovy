@@ -13,27 +13,13 @@
 import net.sf.json.groovy.JsonSlurper
 
 class GoogleGeocoderRedisCached {
-    public static final File logfile = new File("/var/www/geocode/geocoding.log");
-    public static final redis = new redis.clients.jedis.Jedis("localhost")
-    static {
+    public final File logfile = new File("/var/www/geocode/geocoding.log");
+    public final redis = new redis.clients.jedis.Jedis("localhost")
+    public GoogleGeocoderRedisCached() {
         if(!logfile.exists())logfile.createNewFile();
         assert "PONG" == redis.ping()
     }
-    private static my_key = ""
-//    public static def parseJSON(String str){
-//        def slurper = new JsonSlurper()
-//        def result = slurper.parseText(str)
-//        if(!(result instanceof net.sf.json.JSONNull))return result
-//        else return null
-//    }
-//    public static cacheToGeocodingResponse(def cacheAns) {
-//        '{"lb":' + cacheAns.lat +
-//                ',"mb":' + cacheAns.lng +
-//                ',"address":"' + cacheAns.full +
-//                '","loc_type":"' + cacheAns.precision +
-//                '"}'
-//    }
-    public static def geocode(String address,boolean local,boolean strict = false, String area_level_bound, String bounds){
+    public def geocode(String address,boolean local,boolean strict = false, String area_level_bound, String bounds){
         String ans_cache = ""
 
         if(redis.exists(address)) {
@@ -44,7 +30,6 @@ class GoogleGeocoderRedisCached {
             }
             return cacheAns;
         } else {
-            //println "geocoding..."
             //kiev region bounds:
             sleep(250);
             String query = "http://maps.googleapis.com/maps/api/geocode/json?address="+URLEncoder.encode(address)+"&language=uk&sensor=false"
@@ -56,9 +41,6 @@ class GoogleGeocoderRedisCached {
             String google_ans = (query).toURL().getText()
             def slurper = new JsonSlurper()
             def result = slurper.parseText(google_ans)
-            //println result.results.length
-            //println result.status+":"
-            //println result.results
             if (result.status == "OK") {
 
                 def lat = result.results[0].geometry.location.lat
@@ -91,7 +73,6 @@ class GoogleGeocoderRedisCached {
                     return "no definite geocode";
                 }
             }
-
         }
     }
 }
