@@ -3,7 +3,7 @@
 function sendNotification {
     subject="Geocoder node $(hostname) status update"
     from="geocoder@mresearch.com"
-    recipients="reshet.ukr@gmail.com"
+    recipients="reshet.ukr@gmail.com,fshodan@gmail.com"
     emailtext="$1"
 
 /usr/sbin/sendmail "$recipients" <<EOF

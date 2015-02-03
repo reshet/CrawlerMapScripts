@@ -11,4 +11,4 @@ printf "</p>"
 printf "<h2>Recent log: </h2>"
 tail -n 15 /var/www/geocode/geocoding.log $1 | while read x; do printf "<p>$x</p>"; done
 printf "<h2>Recent geocodings: </h2>"
-cat /var/www/geocode/geocoding.log | egrep -m 10 "Start | TOTAL" $1 | while read x; do printf "<p>$x</p>"; done
+cat /var/www/geocode/geocoding.log | egrep "Start | TOTAL" | tail -20 $1 | while read x; do printf "<p>$x</p>"; done
