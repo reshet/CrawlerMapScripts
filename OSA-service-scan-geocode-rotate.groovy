@@ -85,6 +85,7 @@ class GoogleGeocoderRedisCached {
                 lf ->
                     lf << new Date().getDateTimeString() +" EXCEPTION OCCURED: " + ex.getMessage() + " " + ex.printStackTrace()+ "\n"
             }
+            return "no definite geocode";
         }
     }
 }
